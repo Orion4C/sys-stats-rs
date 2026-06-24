@@ -1,10 +1,8 @@
 use std::collections::HashMap;
 use std::ffi::OsString;
-use strum::IntoEnumIterator;
 use sysinfo::{Process, System};
 
 use crate::config::parameters::Parameters;
-use crate::config::types::Usage;
 use crate::proc::instance::Instance;
 
 pub struct Tracker {
@@ -53,24 +51,23 @@ impl Tracker {
     ) -> Vec<&Instance> {
         let mut res: Vec<&Instance> = Vec::new();
         if parameters.is_none() {
-            println!("Printing All");
             res = self.instances.iter().map(|x| x.1).collect();
             return res;
         }
         let param = parameters.unwrap();
-        for usage in Usage::iter() {
-            let temp: Vec<&Instance> = self
-                .instances
-                .iter()
-                .filter(|(_, instance)| {
-                    param.is_greater_than_min(usage, instance.get_stat_avg(usage))
-                })
-                .map(|(_, instance)| instance)
-                .collect();
-            for instance in temp {
-                if !res.contains(&instance) {
-                    res.push(instance);
-                }
+        let temp: Vec<&Instance> = self
+            .instances
+            .iter()
+            .filter(|(_, instance)| {
+                instance.passes_min_parameters(&param)
+                    && ((instance.get_uptime() as f32 / self.updates as f32) * 100.00)
+                        > param.get_min_uptime_percentage()
+            })
+            .map(|(_, instance)| instance)
+            .collect();
+        for instance in temp {
+            if !res.contains(&instance) {
+                res.push(instance);
             }
         }
         res

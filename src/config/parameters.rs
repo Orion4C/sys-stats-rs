@@ -7,52 +7,47 @@ pub struct Parameters {
     min_mem: f32,
     min_disk_read: f32,
     min_disk_write: f32,
-    pub update_time: Option<Duration>,
+    min_uptime_percent: f32,
+
+    update_time: Option<Duration>,
 }
 
 impl Parameters {
     pub fn new(
-        cpu: f32,
-        mem: f32,
-        disk_read: f32,
-        disk_write: f32,
+        min_cpu: f32,
+        min_mem: f32,
+        min_disk_read: f32,
+        min_disk_write: f32,
+        min_uptime_percent: f32,
         update_time: Option<Duration>,
     ) -> Self {
         Self {
-            min_cpu: cpu,
-            min_mem: mem,
-            min_disk_read: disk_read,
-            min_disk_write: disk_write,
+            min_cpu,
+            min_mem,
+            min_disk_read,
+            min_disk_write,
+            min_uptime_percent,
             update_time,
         }
     }
 
-    pub fn is_greater_than_min(&self, usage: Usage, val: f32) -> bool {
+    pub fn get_min_usage(&self, usage: Usage) -> f32 {
         match usage {
-            Usage::Cpu => {
-                if self.min_cpu < val {
-                    return true;
-                }
-                return false;
-            }
-            Usage::Memory => {
-                if self.min_mem < val {
-                    return true;
-                }
-                return false;
-            }
-            Usage::DiskRead => {
-                if self.min_disk_read < val {
-                    return true;
-                }
-                return false;
-            }
-            Usage::DiskWrite => {
-                if self.min_disk_write < val {
-                    return true;
-                }
-                return false;
-            }
+            Usage::Cpu => self.min_cpu,
+            Usage::Memory => self.min_mem,
+            Usage::DiskRead => self.min_disk_read,
+            Usage::DiskWrite => self.min_disk_write,
         }
+    }
+
+    pub fn get_min_uptime_percentage(&self) -> f32 {
+        self.min_uptime_percent
+    }
+
+    pub fn get_update_time(&self) -> Duration {
+        if self.update_time.is_none() {
+            return sysinfo::MINIMUM_CPU_UPDATE_INTERVAL;
+        }
+        self.update_time.unwrap()
     }
 }

@@ -1,7 +1,8 @@
 use std::ffi::OsString;
+use strum::IntoEnumIterator;
 use sysinfo::{Pid, Process};
 
-use crate::{config::types::Usage, proc::stats::Stats};
+use crate::{config::parameters::Parameters, config::types::Usage, proc::stats::Stats};
 
 #[derive(PartialEq)]
 pub struct Instance {
@@ -17,7 +18,7 @@ impl Instance {
         Self {
             pid: proc.pid(),
             name: proc.name().to_owned(),
-            uptime: 0,
+            uptime: 1,
             metrics: Stats::new(proc),
         }
     }
@@ -50,6 +51,15 @@ impl Instance {
     }
 
     pub fn get_stat_avg(&self, usage: Usage) -> f32 {
-        return self.metrics.get_stat_avg(usage);
+        self.metrics.get_stat_avg(usage)
+    }
+
+    pub fn passes_min_parameters(&self, param: &Parameters) -> bool {
+        for usage in Usage::iter() {
+            if param.get_min_usage(usage) < self.metrics.get_stat_avg(usage) {
+                return true;
+            }
+        }
+        false
     }
 }
