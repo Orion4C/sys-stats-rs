@@ -1,0 +1,9 @@
+[package]
+name = "sys-stats-rs"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+strum = { version = "0.28", features = ["derive"] }
+strum_macros = "0.28"
+sysinfo = "0.39.5"
