@@ -49,13 +49,11 @@ impl Tracker {
         &self,
         parameters: Option<Parameters>,
     ) -> Vec<&Instance> {
-        let mut res: Vec<&Instance> = Vec::new();
         if parameters.is_none() {
-            res = self.instances.iter().map(|x| x.1).collect();
-            return res;
+            return self.instances.iter().map(|x| x.1).collect();
         }
         let param = parameters.unwrap();
-        let temp: Vec<&Instance> = self
+        return self
             .instances
             .iter()
             .filter(|(_, instance)| {
@@ -65,11 +63,5 @@ impl Tracker {
             })
             .map(|(_, instance)| instance)
             .collect();
-        for instance in temp {
-            if !res.contains(&instance) {
-                res.push(instance);
-            }
-        }
-        res
     }
 }
