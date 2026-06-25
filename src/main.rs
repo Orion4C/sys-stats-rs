@@ -23,7 +23,8 @@ fn main() {
     }
     for instance in tracker.get_instances_against_parameters(Some(params)) {
         println!(
-            "Process: {:?}\nCpu: {}\nMem: {}mb\nDiskRead: {}mb\nDiskWrite: {}mb,\nUptime: {:.2}%",
+            "Process: {}\nName: {:?}\nCpu: {}\nMem: {}mb\nDiskRead: {}mb\nDiskWrite: {}mb,\nUptime: {:.2}%",
+            instance.get_pid(),
             instance.get_name(),
             instance.get_stat_avg(config::types::Usage::Cpu),
             BytesConversion::to_mb(instance.get_stat_avg(config::types::Usage::Memory)),

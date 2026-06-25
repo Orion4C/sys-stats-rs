@@ -5,7 +5,6 @@ use strum::IntoEnumIterator;
 use crate::config::types::{self, Usage};
 use sysinfo::Process;
 
-#[derive(PartialEq)]
 struct Stat {
     current: f32,
     average: f32,
@@ -28,7 +27,6 @@ impl Stat {
     }
 }
 
-#[derive(PartialEq)]
 pub struct Stats {
     tracked: HashMap<types::Usage, Stat>,
 }
@@ -42,6 +40,8 @@ impl Stats {
         Self { tracked: res }
     }
 
+    /// Folds the process's current readings into every tracked metric's running
+    /// average — one new sample per [`Usage`] channel.
     pub fn update(&mut self, proc: &Process) {
         for (usage, stat) in &mut self.tracked {
             let value = usage.get_usage(proc);
@@ -49,7 +49,15 @@ impl Stats {
         }
     }
 
+    /// Returns the running average for the given [`Usage`] metric.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `usage` has no entry in the tracked metrics.
     pub fn get_stat_avg(&self, usage: Usage) -> f32 {
-        return self.tracked.get(&usage).unwrap().average;
+        self.tracked
+            .get(&usage)
+            .expect("get_stat_avg() - Usage does not exist within tracked Stats")
+            .average
     }
 }

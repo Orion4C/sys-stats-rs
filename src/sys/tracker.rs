@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::ffi::OsString;
-use sysinfo::{Process, System};
+use sysinfo::System;
 
 use crate::config::parameters::Parameters;
 use crate::proc::instance::Instance;
@@ -20,6 +20,10 @@ impl Tracker {
         }
     }
 
+    /// Advances the tracker by one tick: refreshes system data, increments the
+    /// global update count, then for each live process updates the instance
+    /// tracked under that process's name — creating one the first time a name
+    /// is seen.
     pub fn update(&mut self) {
         self.updates = self.updates.saturating_add(1);
         self.sys.refresh_all();
@@ -32,19 +36,16 @@ impl Tracker {
         }
     }
 
-    pub fn add_instance(&mut self, proc: &Process) {
-        let s = proc.name().to_owned();
-        if self.instances.contains_key(&s) {
-            self.instances.entry(s).and_modify(|k| k.update(proc));
-        } else {
-            self.instances.insert(s, Instance::new(proc));
-        }
-    }
-
     pub fn get_update_count(&self) -> f32 {
-        return self.updates as f32;
+        self.updates as f32
     }
 
+    /// Returns the tracked instances, optionally filtered by `parameters`.
+    ///
+    /// With `None`, returns every tracked instance unfiltered. With `Some`, returns
+    /// only instances that both exceed at least one metric threshold (see
+    /// [`Instance::passes_min_parameters`]) and have been seen for a large enough
+    /// share of update ticks to clear the configured minimum uptime percentage.
     pub fn get_instances_against_parameters(
         &self,
         parameters: Option<Parameters>,
@@ -53,8 +54,7 @@ impl Tracker {
             return self.instances.iter().map(|x| x.1).collect();
         }
         let param = parameters.unwrap();
-        return self
-            .instances
+        self.instances
             .iter()
             .filter(|(_, instance)| {
                 instance.passes_min_parameters(&param)
@@ -62,6 +62,6 @@ impl Tracker {
                         > param.get_min_uptime_percentage()
             })
             .map(|(_, instance)| instance)
-            .collect();
+            .collect()
     }
 }
