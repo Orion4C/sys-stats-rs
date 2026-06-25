@@ -4,7 +4,6 @@ use sysinfo::{Pid, Process};
 
 use crate::{config::parameters::Parameters, config::types::Usage, proc::stats::Stats};
 
-#[derive(PartialEq)]
 pub struct Instance {
     pid: Pid,
     name: OsString,
