@@ -11,6 +11,12 @@ pub struct ProcessTracker {
     start_time: DateTime<Utc>,
 }
 
+impl Default for ProcessTracker {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ProcessTracker {
     pub fn new() -> Self {
         Self {

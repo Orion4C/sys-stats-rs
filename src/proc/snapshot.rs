@@ -28,7 +28,7 @@ impl ProcessSnapshot {
     }
 
     pub fn has_endtime(&self) -> bool {
-        !self.end_time.is_none()
+        self.end_time.is_some()
     }
 
     pub fn update(&mut self, proc: &Process) {

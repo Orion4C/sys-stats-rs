@@ -23,7 +23,7 @@ impl Stat {
     fn update(&mut self, val: f32) {
         self.current = val;
         self.average = ((self.average * self.counter) + val) / (self.counter + 1.0);
-        self.counter = self.counter + 1.0;
+        self.counter += 1.0;
     }
 }
 
