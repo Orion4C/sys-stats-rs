@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
 use sysinfo::{Pid, System};
@@ -7,13 +8,21 @@ use crate::proc::snapshot::ProcessSnapshot;
 
 pub struct ProcessTracker {
     pub instances: HashMap<OsString, Vec<ProcessSnapshot>>,
+    start_time: DateTime<Utc>,
 }
 
 impl ProcessTracker {
     pub fn new() -> Self {
         Self {
             instances: HashMap::new(),
+            start_time: Utc::now(),
         }
+    }
+
+    pub fn process_runtime_percentage(&self, snapshot: &ProcessSnapshot) -> f32 {
+        ((Utc::now() - self.start_time).num_milliseconds()
+            / snapshot.get_runtime().num_milliseconds()) as f32
+            * 100.0
     }
 
     pub fn update(&mut self, sys: &System) {

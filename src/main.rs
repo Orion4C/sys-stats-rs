@@ -1,3 +1,5 @@
+use std::ptr;
+
 use sysinfo::System;
 
 use crate::config::{parameters::Parameters, types::Usage};
@@ -25,7 +27,7 @@ fn main() {
         ptracker.update(&sys);
         std::thread::sleep(params.get_update_time());
     }
-    for (name, instances) in ptracker.instances {
+    for (name, instances) in &ptracker.instances {
         println!("----------");
         println!("Process: {:?}", name);
         if instances.len() > 1 {
@@ -34,7 +36,11 @@ fn main() {
         for instance in instances {
             println!("---");
             println!("id: {}", instance.get_pid());
-            println!("runtime: {:.2}s", instance.get_runtime().num_seconds());
+            println!(
+                "runtime: {:.2}s - {:.2}% total",
+                instance.get_runtime().num_seconds(),
+                ptracker.process_runtime_percentage(instance)
+            );
             println!("cpu: {:.2}%", instance.get_stat_avg(Usage::Cpu));
             println!(
                 "mem: {:.2}mb",
