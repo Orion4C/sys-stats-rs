@@ -1,45 +1,51 @@
-use std::ffi::OsString;
+use chrono::{DateTime, TimeDelta, Utc};
 use strum::IntoEnumIterator;
-use sysinfo::Pid;
-use sysinfo::Process;
+use sysinfo::{Pid, Process};
 
 use crate::{config::parameters::Parameters, config::types::Usage, proc::stats::Stats};
 
-pub struct Instance {
-    pid: Pid,
-    name: OsString,
-    uptime: u64,
-
+pub struct ProcessSnapshot {
+    process_id: Pid,
+    process_name: std::ffi::OsString,
+    start_time: DateTime<Utc>,
+    end_time: Option<DateTime<Utc>>,
     metrics: Stats,
 }
 
-impl Instance {
+impl ProcessSnapshot {
     pub fn new(proc: &Process) -> Self {
         Self {
-            pid: proc.pid(),
-            name: proc.name().to_owned(),
-            uptime: 1,
+            process_id: proc.pid(),
+            process_name: proc.name().to_owned(),
+            start_time: Utc::now(),
+            end_time: None,
             metrics: Stats::new(proc),
         }
     }
 
-    /// Records one observation of this process: increments the uptime tick
-    /// counter and folds the latest metrics into the running averages.
+    pub fn set_endtime(&mut self) {
+        self.end_time = Some(Utc::now());
+    }
+
+    pub fn has_endtime(&self) -> bool {
+        !self.end_time.is_none()
+    }
+
     pub fn update(&mut self, proc: &Process) {
-        self.uptime = self.uptime.saturating_add(1);
         self.metrics.update(proc);
     }
 
     pub fn get_pid(&self) -> &Pid {
-        &self.pid
+        &self.process_id
     }
 
-    pub fn get_name(&self) -> &OsString {
-        &self.name
+    pub fn get_name(&self) -> &std::ffi::OsString {
+        &self.process_name
     }
 
-    pub fn get_uptime(&self) -> f32 {
-        self.uptime as f32
+    /// Returns the running Timedelta of the given snapshot
+    pub fn get_runtime(&self) -> TimeDelta {
+        Utc::now() - self.start_time
     }
 
     /// Returns the running average for the given [`Usage`] metric.

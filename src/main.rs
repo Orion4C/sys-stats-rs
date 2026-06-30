@@ -1,14 +1,17 @@
-use crate::{
-    config::{conversions::BytesConversion, parameters::Parameters},
-    sys::tracker::Tracker,
-};
+use sysinfo::System;
+
+use crate::config::{parameters::Parameters, types::Usage};
+use crate::sys::tracker::ProcessTracker;
+use crate::utility::conversions::BytesConversion;
 
 pub mod config;
 pub mod proc;
 pub mod sys;
+pub mod utility;
 
 fn main() {
-    let mut tracker = Tracker::new();
+    let mut ptracker = ProcessTracker::new();
+    let mut sys = System::new();
     let params = Parameters::new(
         100.0,
         BytesConversion::from_gb(0.5),
@@ -17,20 +20,26 @@ fn main() {
         0.0,
         None,
     );
-    for _ in 0..100 {
-        tracker.update();
+    for _ in 0..10 {
+        sys.refresh_all();
+        ptracker.update(&sys);
         std::thread::sleep(params.get_update_time());
     }
-    for instance in tracker.get_instances_against_parameters(Some(params)) {
-        println!(
-            "Process: {}\nName: {:?}\nCpu: {}\nMem: {}mb\nDiskRead: {}mb\nDiskWrite: {}mb,\nUptime: {:.2}%",
-            instance.get_pid(),
-            instance.get_name(),
-            instance.get_stat_avg(config::types::Usage::Cpu),
-            BytesConversion::to_mb(instance.get_stat_avg(config::types::Usage::Memory)),
-            BytesConversion::to_mb(instance.get_stat_avg(config::types::Usage::DiskRead)),
-            BytesConversion::to_mb(instance.get_stat_avg(config::types::Usage::DiskWrite)),
-            (instance.get_uptime() / tracker.get_update_count()) * 100.0
-        )
+    for (name, instances) in ptracker.instances {
+        println!("----------");
+        println!("Process: {:?}", name);
+        if instances.len() > 1 {
+            println!("~process contains: {} instances", instances.len());
+        }
+        for instance in instances {
+            println!("---");
+            println!("id: {}", instance.get_pid());
+            println!("runtime: {:.2}s", instance.get_runtime().num_seconds());
+            println!("cpu: {:.2}%", instance.get_stat_avg(Usage::Cpu));
+            println!(
+                "mem: {:.2}mb",
+                BytesConversion::to_mb(instance.get_stat_avg(Usage::Memory))
+            );
+        }
     }
 }

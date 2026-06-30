@@ -1,2 +1,2 @@
-pub mod instance;
+pub mod snapshot;
 pub mod stats;

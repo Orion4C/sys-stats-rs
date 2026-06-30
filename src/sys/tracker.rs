@@ -1,67 +1,42 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
-use sysinfo::System;
+use sysinfo::{Pid, System};
 
-use crate::config::parameters::Parameters;
-use crate::proc::instance::Instance;
+//use crate::config::parameters::Parameters;
+use crate::proc::snapshot::ProcessSnapshot;
 
-pub struct Tracker {
-    sys: System,
-    instances: HashMap<OsString, Instance>,
-    updates: u64,
+pub struct ProcessTracker {
+    pub instances: HashMap<OsString, Vec<ProcessSnapshot>>,
 }
 
-impl Tracker {
+impl ProcessTracker {
     pub fn new() -> Self {
         Self {
-            sys: System::new(),
             instances: HashMap::new(),
-            updates: 0,
         }
     }
 
-    /// Advances the tracker by one tick: refreshes system data, increments the
-    /// global update count, then for each live process updates the instance
-    /// tracked under that process's name — creating one the first time a name
-    /// is seen.
-    pub fn update(&mut self) {
-        self.updates = self.updates.saturating_add(1);
-        self.sys.refresh_all();
-        for (_, proc) in self.sys.processes() {
-            let key = proc.name().to_os_string();
-            self.instances
-                .entry(key)
-                .and_modify(|instance| instance.update(proc))
-                .or_insert_with(|| Instance::new(proc));
+    pub fn update(&mut self, sys: &System) {
+        // update the live snapshot for each running process, or start one
+        for (pid, proc) in sys.processes() {
+            let vec = self.instances.entry(proc.name().to_owned()).or_default();
+            match vec
+                .iter_mut()
+                .find(|p| p.get_pid() == pid && !p.has_endtime())
+            {
+                Some(live) => live.update(proc),
+                None => vec.push(ProcessSnapshot::new(proc)),
+            }
         }
-    }
 
-    pub fn get_update_count(&self) -> f32 {
-        self.updates as f32
-    }
-
-    /// Returns the tracked instances, optionally filtered by `parameters`.
-    ///
-    /// With `None`, returns every tracked instance unfiltered. With `Some`, returns
-    /// only instances that both exceed at least one metric threshold (see
-    /// [`Instance::passes_min_parameters`]) and have been seen for a large enough
-    /// share of update ticks to clear the configured minimum uptime percentage.
-    pub fn get_instances_against_parameters(
-        &self,
-        parameters: Option<Parameters>,
-    ) -> Vec<&Instance> {
-        if parameters.is_none() {
-            return self.instances.iter().map(|x| x.1).collect();
+        // anything still live but no longer in the OS gets an endtime
+        let alive: HashSet<Pid> = sys.processes().keys().copied().collect();
+        for snaps in self.instances.values_mut() {
+            for snap in snaps.iter_mut() {
+                if !snap.has_endtime() && !alive.contains(snap.get_pid()) {
+                    snap.set_endtime();
+                }
+            }
         }
-        let param = parameters.unwrap();
-        self.instances
-            .iter()
-            .filter(|(_, instance)| {
-                instance.passes_min_parameters(&param)
-                    && ((instance.get_uptime() as f32 / self.updates as f32) * 100.00)
-                        > param.get_min_uptime_percentage()
-            })
-            .map(|(_, instance)| instance)
-            .collect()
     }
 }
