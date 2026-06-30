@@ -21,8 +21,9 @@ fn main() {
         BytesConversion::from_mb(20.0),
         0.0,
         None,
+        20,
     );
-    for _ in 0..10 {
+    for _ in 0..params.get_runtime_iterations() {
         sys.refresh_all();
         ptracker.update(&sys);
         std::thread::sleep(params.get_update_time());

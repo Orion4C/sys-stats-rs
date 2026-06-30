@@ -10,6 +10,8 @@ pub struct Parameters {
     min_uptime_percent: f32,
 
     update_time: Option<Duration>,
+
+    runtime_iterations: u64,
 }
 
 impl Parameters {
@@ -20,6 +22,7 @@ impl Parameters {
         min_disk_write: f32,
         min_uptime_percent: f32,
         update_time: Option<Duration>,
+        runtime_iterations: u64,
     ) -> Self {
         Self {
             min_cpu,
@@ -28,6 +31,7 @@ impl Parameters {
             min_disk_write,
             min_uptime_percent,
             update_time,
+            runtime_iterations,
         }
     }
 
@@ -43,6 +47,10 @@ impl Parameters {
 
     pub fn get_min_uptime_percentage(&self) -> f32 {
         self.min_uptime_percent
+    }
+
+    pub fn get_runtime_iterations(&self) -> u64 {
+        self.runtime_iterations
     }
 
     /// Returns the polling interval between metric updates.

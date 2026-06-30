@@ -3,7 +3,7 @@ use std::collections::{HashMap, HashSet};
 use std::ffi::OsString;
 use sysinfo::{Pid, System};
 
-//use crate::config::parameters::Parameters;
+use crate::config::parameters::Parameters;
 use crate::proc::snapshot::ProcessSnapshot;
 
 pub struct ProcessTracker {
@@ -20,9 +20,32 @@ impl ProcessTracker {
     }
 
     pub fn process_runtime_percentage(&self, snapshot: &ProcessSnapshot) -> f32 {
-        ((Utc::now() - self.start_time).num_milliseconds()
-            / snapshot.get_runtime().num_milliseconds()) as f32
-            * 100.0
+        let tracker_runtime = (Utc::now() - self.start_time).num_milliseconds();
+        if tracker_runtime <= 0 {
+            return 0.0;
+        }
+        (snapshot.get_runtime().num_milliseconds() as f32 / tracker_runtime as f32) * 100.0
+    }
+
+    pub fn get_trimmed_list(
+        &self,
+        param: &Parameters,
+    ) -> HashMap<&OsString, Vec<&ProcessSnapshot>> {
+        let mut res: HashMap<&OsString, Vec<&ProcessSnapshot>> = HashMap::new();
+        for (name, snaps) in &self.instances {
+            let kept: Vec<&ProcessSnapshot> = snaps
+                .iter()
+                .filter(|snap| {
+                    snap.passes_min_parameters(param)
+                        && self.process_runtime_percentage(snap)
+                            >= param.get_min_uptime_percentage()
+                })
+                .collect();
+            if !kept.is_empty() {
+                res.insert(name, kept);
+            }
+        }
+        res
     }
 
     pub fn update(&mut self, sys: &System) {
