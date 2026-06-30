@@ -89,3 +89,6 @@ bytes), matching how `--min-mem` is interpreted on the command line.
 ```sh
 cargo test
 ```
+
+Unit tests cover the pure logic: the running-average computation, the byte-unit
+conversions, and the parameter dispatch and interval-clamping rules.
