@@ -61,3 +61,46 @@ impl Stats {
             .average
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn new_counts_as_first_sample() {
+        let s = Stat::new(7.0);
+        assert_eq!(s.average, 7.0);
+        assert_eq!(s.counter, 1.0);
+    }
+
+    #[test]
+    fn average_of_two_values() {
+        let mut s = Stat::new(10.0);
+        s.update(20.0);
+        assert_eq!(s.average, 15.0);
+    }
+
+    #[test]
+    fn average_of_known_sequence() {
+        let mut s = Stat::new(2.0);
+        s.update(4.0);
+        s.update(6.0);
+        assert_eq!(s.average, 4.0);
+    }
+
+    #[test]
+    fn constant_series_does_not_drift() {
+        let mut s = Stat::new(5.0);
+        for _ in 0..100 {
+            s.update(5.0);
+        }
+        assert_eq!(s.average, 5.0);
+    }
+
+    #[test]
+    fn update_records_current_value() {
+        let mut s = Stat::new(1.0);
+        s.update(99.0);
+        assert_eq!(s.current, 99.0);
+    }
+}
