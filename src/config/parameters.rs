@@ -11,7 +11,7 @@ pub struct Parameters {
 
     update_time: Option<Duration>,
 
-    runtime_iterations: u64,
+    runtime_iterations: u32,
 }
 
 impl Parameters {
@@ -22,7 +22,7 @@ impl Parameters {
         min_disk_write: f32,
         min_uptime_percent: f32,
         update_time: Option<Duration>,
-        runtime_iterations: u64,
+        runtime_iterations: u32,
     ) -> Self {
         Self {
             min_cpu,
@@ -49,7 +49,7 @@ impl Parameters {
         self.min_uptime_percent
     }
 
-    pub fn get_runtime_iterations(&self) -> u64 {
+    pub fn get_runtime_iterations(&self) -> u32 {
         self.runtime_iterations
     }
 
